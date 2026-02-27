@@ -1,54 +1,83 @@
 # DataPilot AI — Autonomous Data Scientist Agent Platform
 
-A production-ready full-stack AutoML platform that automatically analyzes CSV datasets, trains multiple ML models, and returns ranked results with visual reports.
+A production-ready full-stack AutoML platform. Upload a CSV, select a target column, and the system automatically cleans your data, trains multiple ML models, selects the best one, and delivers a visual dashboard with downloadable PDF report and cleaned dataset.
 
 ![Status](https://img.shields.io/badge/status-stable-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![Node.js](https://img.shields.io/badge/node.js-v24-green)
 ![MongoDB](https://img.shields.io/badge/mongodb-8.2.5-green)
+![React](https://img.shields.io/badge/react-19-61dafb)
+![FastAPI](https://img.shields.io/badge/fastapi-0.111-009688)
 
 ---
 
 ## Table of Contents
 
-- [Project Overview](#project-overview)
+- [What This Does](#what-this-does)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Quick Start — Local Development](#quick-start--local-development)
 - [Quick Start — Docker](#quick-start--docker)
 - [Environment Variables](#environment-variables)
-- [Known Issues & Fixes](#known-issues--fixes)
-- [API Reference](#api-reference)
-- [Frontend Pages](#frontend-pages)
+- [Frontend Architecture](#frontend-architecture)
 - [ML Pipeline](#ml-pipeline)
+- [API Reference](#api-reference)
+- [Download Features](#download-features)
+- [Known Issues & Fixes](#known-issues--fixes)
 - [Performance Notes](#performance-notes)
 - [Deployment](#deployment)
+- [Troubleshooting Checklist](#troubleshooting-checklist)
+- [What To Build Next](#what-to-build-next)
 
 ---
 
-## Project Overview
+## What This Does
 
-DataPilot AI is a zero-code AutoML platform. Upload a CSV, select a target column, and the system automatically:
+DataPilot AI is a zero-code AutoML platform that runs a full data science pipeline automatically:
 
-1. Analyzes dataset structure and detects problem type (classification / regression)
-2. Cleans and preprocesses data (handles missing values, encodes categoricals, scales numerics)
-3. Runs statistical analysis and generates a correlation matrix
-4. Trains multiple ML models in parallel
-5. Evaluates models using cross-validation and selects the best one
-6. Returns a visual dashboard with charts, feature importance, and a downloadable report
+1. **Upload** — drag-and-drop CSV upload with live data preview (first 5 rows)
+2. **Select Target** — pick which single column to predict using chips or dropdown
+3. **Pipeline runs automatically (6 stages):**
+   - Data Understanding — detects column types, null %, problem type
+   - Data Cleaning — removes duplicates, fills nulls, encodes categoricals
+   - Feature Engineering — scales numerics, builds X/y matrices
+   - Statistical Analysis — descriptive stats, Pearson correlation matrix
+   - Model Training — trains 3 models simultaneously
+   - Model Evaluation — cross-validation, test metrics, best model selection
+4. **Results Dashboard:**
+   - Best model banner with key metrics (Accuracy, F1, ROC-AUC / RMSE, R²)
+   - Model comparison bar chart (CV Score, Accuracy, F1 or R²)
+   - Feature importance horizontal bar chart (top 10)
+   - Correlation matrix heatmap (SVG, teal = positive, red = negative)
+   - Full metrics table comparing all models
+5. **Download:**
+   - **Cleaned CSV** — the preprocessed dataset ready for external use
+   - **PDF Report** — full A4 report with metrics table, feature importance bars, correlation heatmap, and best model summary
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, Vite 7, Recharts, Axios |
-| Backend | Python 3.12, FastAPI, Uvicorn |
-| ML | Scikit-learn, Pandas, NumPy, SciPy |
-| Database | MongoDB 8.2.5, Motor (async driver) |
-| DevOps | Docker, docker-compose, Kubernetes |
+| Layer | Technology | Version |
+|---|---|---|
+| Frontend | React | 19 |
+| Frontend | Vite | 7 |
+| Frontend | Recharts | 3.x |
+| Frontend | Axios | 1.x |
+| Frontend | jsPDF (PDF generation) | 2.5 (CDN, no install) |
+| Backend | Python | 3.12 |
+| Backend | FastAPI | 0.111 |
+| Backend | Uvicorn | 0.30 |
+| ML | Scikit-learn | 1.5 |
+| ML | Pandas | 2.2 |
+| ML | NumPy | 1.26 |
+| ML | SciPy | 1.13 |
+| Database | MongoDB | 8.2.5 |
+| Database | Motor (async driver) | 3.7.1 |
+| Database | PyMongo | 4.10.1 |
+| DevOps | Docker + docker-compose | Latest |
+| DevOps | Kubernetes | k8s/ manifests |
 
 ---
 
@@ -56,69 +85,73 @@ DataPilot AI is a zero-code AutoML platform. Upload a CSV, select a target colum
 
 ```
 DataPilot_AI/
-├── docker-compose.yml               # Full stack local Docker setup
+├── docker-compose.yml               # Full stack: MongoDB + Backend + Frontend
+├── README.md                        # This file
 │
 ├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── .env                         # Environment variables (create manually)
+│   ├── Dockerfile                   # Python 3.12 slim image
+│   ├── requirements.txt             # Pinned Python dependencies
+│   ├── .env                         # Environment variables (UTF-8, create manually)
 │   └── app/
-│       ├── main.py                  # FastAPI app entry point
+│       ├── main.py                  # FastAPI entry point + CORS + GZip middleware
 │       ├── agents/
-│       │   └── orchestrator.py      # ML pipeline runner
-│       ├── api/routes/
-│       │   ├── upload.py            # POST /api/v1/upload
-│       │   ├── analyze.py           # POST /api/v1/analyze
-│       │   ├── status.py            # GET  /api/v1/status/{id}
-│       │   └── results.py           # GET  /api/v1/results/{id}
+│       │   └── orchestrator.py      # Full ML pipeline async runner
+│       ├── api/
+│       │   └── routes/
+│       │       ├── upload.py        # POST /api/v1/upload
+│       │       ├── analyze.py       # POST /api/v1/analyze
+│       │       ├── status.py        # GET  /api/v1/status/{session_id}
+│       │       ├── results.py       # GET  /api/v1/results/{session_id}
+│       │       └── download.py      # GET  /api/v1/download/{session_id}
 │       ├── core/
-│       │   ├── config.py            # Pydantic settings
-│       │   └── database.py          # MongoDB connection
+│       │   ├── config.py            # Pydantic settings (ALLOWED_ORIGINS hardcoded here)
+│       │   └── database.py          # MongoDB async connection via Motor
 │       ├── models/
-│       │   └── schemas.py           # Pydantic schemas
+│       │   └── schemas.py           # Pydantic request/response schemas
 │       └── modules/
-│           ├── data_understanding.py
-│           ├── data_cleaning.py
-│           ├── feature_engineering.py
-│           ├── statistical_analysis.py
-│           ├── model_training.py
-│           └── model_evaluation.py
+│           ├── data_understanding.py  # Column type detection, problem type
+│           ├── data_cleaning.py       # Null handling, encoding, dedup
+│           ├── feature_engineering.py # Scaling, X/y preparation
+│           ├── statistical_analysis.py # Descriptive stats, correlation matrix
+│           ├── model_training.py      # Train classification/regression models
+│           └── model_evaluation.py    # CV, metrics, feature importance
 │
 ├── frontend/
-│   ├── Dockerfile
-│   ├── nginx.conf                   # Production nginx config
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── .env                         # VITE_API_BASE_URL
+│   ├── Dockerfile                   # Node 24 builder + nginx:alpine production
+│   ├── nginx.conf                   # SPA routing + static asset caching
+│   ├── package.json                 # Dependencies: React 19, Vite 7, Recharts 3
+│   ├── vite.config.js               # Vite build configuration
+│   ├── .env                         # VITE_API_BASE_URL (create manually)
 │   └── src/
-│       ├── App.jsx                  # Layout, state, routing
-│       ├── pages.jsx                # UploadPage + ProcessingPage
-│       ├── ResultsPage.jsx          # Charts, heatmap, metrics table
-│       ├── utils.jsx                # Design tokens, shared components
-│       └── main.jsx
+│       ├── main.jsx                 # React entry point — do not modify
+│       ├── App.jsx                  # Global layout, all state, polling, routing
+│       ├── Pages.jsx                # UploadPage + ProcessingPage components
+│       ├── ResultsPage.jsx          # Charts, heatmap, metrics, PDF/CSV download
+│       └── constants.jsx            # ALL shared: design tokens, Card, Label,
+│                                    # Metric, ChartTooltip, CHART_COLORS,
+│                                    # PIPELINE_STEPS
 │
-└── k8s/                             # Kubernetes manifests
+└── k8s/                             # Kubernetes deployment manifests
 ```
 
 ---
 
 ## Prerequisites
 
-Install these before starting:
-
-| Software | Version | Download |
+| Software | Required Version | Download |
 |---|---|---|
 | Python | 3.12.x | https://www.python.org/downloads/ |
 | Node.js | 24.x | https://nodejs.org/ |
 | MongoDB | 8.2.5 | https://www.mongodb.com/try/download/community |
+| Docker | Latest (optional) | https://www.docker.com/products/docker-desktop |
 
-Verify your installations:
+Verify before starting:
 
 ```powershell
-python --version    # Python 3.12.x
-node --version      # v24.x.x
-npm --version       # 10.x.x
-mongod --version    # db version v8.2.5
+python --version    # Must show: Python 3.12.x
+node --version      # Must show: v24.x.x
+npm --version       # Must show: 10.x.x or higher
+mongod --version    # Must show: db version v8.2.5
 ```
 
 ---
@@ -128,13 +161,13 @@ mongod --version    # db version v8.2.5
 ### Step 1 — Start MongoDB
 
 ```powershell
-# If installed as a Windows service, verify it's running:
+# Verify MongoDB is running
 mongosh
-# Type 'exit' to close
+# If you see a prompt, type 'exit' — MongoDB is running fine
 
-# If not running, start manually:
+# If mongosh fails, start MongoDB manually
+mkdir C:\data\db    # Only needed first time
 mongod --dbpath "C:\data\db"
-# Create the folder first if it doesn't exist: mkdir C:\data\db
 ```
 
 ### Step 2 — Backend Setup
@@ -142,17 +175,17 @@ mongod --dbpath "C:\data\db"
 ```powershell
 cd D:\Jame\DataPilot_AI\backend
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv
 venv\Scripts\activate
+# You should now see (venv) at the start of your prompt
 
-# Install dependencies
+# Install all dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Create the `.env` file. **Important: save as UTF-8**, not UTF-16.
-The safest way is to create it manually in VS Code or Notepad, or download it from this repo.
+**Create `.env` file** — must be **UTF-8 encoded** (see Known Issues #1 if unsure):
 
 ```env
 MONGODB_URL=mongodb://127.0.0.1:27017
@@ -166,56 +199,67 @@ DEBUG=False
 APP_NAME=AutoML Agent Platform
 ```
 
-> ⚠️ Do NOT create `.env` using PowerShell's `Out-File` without specifying `-Encoding UTF8`.
-> PowerShell saves as UTF-16 by default which breaks dotenv parsing.
-> Safe method: `Out-File .env -Encoding UTF8` or create it in VS Code.
+> ⚠️ **Do NOT add `ALLOWED_ORIGINS` to `.env`** — it is hardcoded in `config.py` to avoid
+> pydantic-settings v2 JSON parsing errors. See Known Issues #2.
 
-Start the backend:
+> ⚠️ **Do NOT use PowerShell `Out-File` without `-Encoding UTF8`** — PowerShell saves UTF-16
+> by default which breaks dotenv. Use VS Code or `Out-File .env -Encoding UTF8`.
+
+**Start the backend:**
 
 ```powershell
 uvicorn app.main:app --reload --port 8000
 ```
 
-Expected output:
+**Expected output:**
 ```
-INFO: Uvicorn running on http://127.0.0.1:8000
-INFO: Connected to MongoDB: datapilot
-INFO: Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Started reloader process [xxxxx]
+INFO:     Connected to MongoDB: datapilot
+INFO:     Application startup complete.
 ```
+
+If you see errors, check [Known Issues & Fixes](#known-issues--fixes) below.
 
 ### Step 3 — Frontend Setup
 
 ```powershell
 cd D:\Jame\DataPilot_AI\frontend
 
+# Install all npm packages (includes React, Vite, Recharts, Axios)
 npm install
 ```
 
-Create `.env` file:
+**Create `.env` file:**
+
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-Start the dev server:
+**Start the development server:**
+
 ```powershell
 npm run dev
 ```
 
-Expected output:
+**Expected output:**
 ```
 VITE v7.x  ready in 269ms
-➜  Local: http://localhost:5173/
+➜  Local:   http://localhost:5173/
+➜  Network: use --host to expose
 ```
 
 ### Step 4 — Open the App
 
 Go to **http://localhost:5173** in your browser.
 
+You should see the DataPilot AI upload interface with a CONNECTED indicator in the top right.
+
 ---
 
 ## Quick Start — Docker
 
-Runs the entire stack (MongoDB + Backend + Frontend) with one command.
+Runs the entire stack — MongoDB + Backend + Frontend — with a single command. No manual setup needed.
 
 ```powershell
 cd D:\Jame\DataPilot_AI
@@ -223,20 +267,26 @@ cd D:\Jame\DataPilot_AI
 docker compose up --build
 ```
 
-First build takes 3–5 minutes. After that:
+First build takes 3–5 minutes (downloads base images and installs dependencies). Subsequent starts are instant.
 
-- Frontend: http://localhost:80
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+After build completes:
 
-To stop:
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:80 |
+| Backend API | http://localhost:8000 |
+| API Docs (Swagger) | http://localhost:8000/docs |
+| API Docs (ReDoc) | http://localhost:8000/redoc |
+
+**Stop the stack:**
 ```powershell
-docker compose down
+docker compose down          # Stop but keep MongoDB data
+docker compose down -v       # Stop and delete all data volumes
 ```
 
-To stop and remove all data:
+**Rebuild after code changes:**
 ```powershell
-docker compose down -v
+docker compose up --build
 ```
 
 ---
@@ -249,258 +299,466 @@ docker compose down -v
 |---|---|---|
 | `MONGODB_URL` | `mongodb://127.0.0.1:27017` | MongoDB connection string |
 | `MONGODB_DB` | `datapilot` | Database name |
-| `UPLOAD_DIR` | `uploads` | Directory for uploaded CSV files |
-| `MAX_FILE_SIZE_MB` | `100` | Maximum CSV upload size |
-| `CV_FOLDS` | `5` | Cross-validation folds (reduce to 3 for small datasets) |
-| `TEST_SIZE` | `0.2` | Train/test split ratio |
+| `UPLOAD_DIR` | `uploads` | Directory where uploaded CSVs are stored |
+| `MAX_FILE_SIZE_MB` | `100` | Maximum upload file size in MB |
+| `CV_FOLDS` | `5` | Cross-validation folds (reduce to 2–3 for small datasets) |
+| `TEST_SIZE` | `0.2` | Fraction of data held out for testing (0.0–1.0) |
 | `RANDOM_STATE` | `42` | Random seed for reproducibility |
-| `DEBUG` | `False` | Debug mode |
+| `DEBUG` | `False` | Enable debug mode |
+| `APP_NAME` | `AutoML Agent Platform` | Application name shown in logs |
 
-> `ALLOWED_ORIGINS` is defined directly in `config.py` to avoid pydantic-settings parsing issues with list values. Edit `config.py` if you need to add new origins.
+> `ALLOWED_ORIGINS` is **not** read from `.env`. It is defined as a Python list directly
+> in `config.py`. Edit that file to add new origins for production deployments.
 
 ### Frontend `.env`
 
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API URL (must start with `VITE_`) |
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API URL. Must start with `VITE_` for Vite to expose it. |
+
+---
+
+## Frontend Architecture
+
+The `frontend/src/` directory contains exactly **4 source files** plus `main.jsx`:
+
+### `constants.jsx`
+Single source of truth for all shared code:
+- `C` — design token object (colors, fonts, spacing)
+- `CHART_COLORS` — array of chart palette colors
+- `PIPELINE_STEPS` — ordered list of pipeline stage names
+- `Card` — reusable card wrapper component
+- `Label` — section label component
+- `Metric` — metric display component (value + label)
+- `ChartTooltip` — custom Recharts tooltip component
+
+> ⚠️ All other source files import from `./constants`. Do not create additional utility files
+> (`utils.jsx`, `config.jsx`, etc.) — this causes duplicate export errors. See Known Issues #4.
+
+### `App.jsx`
+- Global layout: header, sidebar navigation, main content area
+- Holds all application state (session, columns, results, status, etc.)
+- Handles polling logic (checks status every 2 seconds during processing)
+- Routes between Upload / Processing / Results views
+- Calls `startAnalysis()` and passes it down as `onStartAnalysis` prop
+
+### `Pages.jsx`
+- `UploadPage` — CSV drag-and-drop, file preview table, column chip selector, start button
+- `ProcessingPage` — progress bar, pipeline step tracker, live log console
+- `StartButton` — exported separately for use in App.jsx sidebar
+
+### `ResultsPage.jsx`
+- Best model banner with live metrics
+- Model comparison bar chart (Recharts `BarChart`)
+- Feature importance horizontal bar chart (Recharts `BarChart` layout=vertical)
+- Correlation matrix heatmap (pure SVG, no external library)
+- Full metrics comparison table
+- Feature importance detail bars
+- **Download Cleaned CSV** button — calls backend `/api/v1/download/{session_id}`
+- **Download PDF Report** button — generates A4 PDF using jsPDF (loaded from CDN)
+
+---
+
+## ML Pipeline
+
+The pipeline runs 6 sequential stages inside `orchestrator.py`:
+
+| Stage | Module | What It Does |
+|---|---|---|
+| Data Understanding | `data_understanding.py` | Reads CSV, detects column types, counts nulls, detects problem type (classification if target has ≤20 unique values or is string/bool, else regression) |
+| Data Cleaning | `data_cleaning.py` | Removes duplicate rows, fills numeric nulls with median, fills categorical nulls with mode, applies LabelEncoder to categorical columns |
+| Feature Engineering | `feature_engineering.py` | Applies StandardScaler to numeric features, builds final X matrix and y vector |
+| Statistical Analysis | `statistical_analysis.py` | Computes descriptive statistics (mean, std, min, max, quartiles), builds Pearson correlation matrix |
+| Model Training | `model_training.py` | Trains all models on the full training set |
+| Model Evaluation | `model_evaluation.py` | Runs k-fold cross-validation, evaluates on held-out test set, extracts feature importances, selects best model |
+
+### Models Trained
+
+**Classification:**
+- Logistic Regression (`max_iter=500`)
+- Random Forest Classifier (`n_estimators=100`)
+- Gradient Boosting Classifier (`n_estimators=100`)
+
+**Regression:**
+- Linear Regression
+- Random Forest Regressor (`n_estimators=100`)
+- Gradient Boosting Regressor (`n_estimators=100`)
+
+### Evaluation Metrics
+
+**Classification:** Accuracy, F1 Score (weighted), ROC-AUC (binary or OvR multiclass), CV Mean, CV Std, Train Time
+
+**Regression:** RMSE, R², CV Mean, CV Std, Train Time
+
+**Best model selection:** Highest cross-validation mean score (`f1_weighted` for classification, `r2` for regression).
+
+### Feature Importance
+
+Extracted from `feature_importances_` attribute (tree-based models) or `coef_` (linear models). Top 15 features returned, sorted by importance descending.
+
+---
+
+## API Reference
+
+**Base URL:** `http://localhost:8000`
+
+**Interactive docs:** http://localhost:8000/docs (Swagger UI)
+
+**Schema docs:** http://localhost:8000/redoc (ReDoc)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Health check → `{"status":"ok"}` |
+| `POST` | `/api/v1/upload` | Upload CSV file, returns session_id + columns |
+| `POST` | `/api/v1/analyze` | Start ML pipeline for a session |
+| `GET` | `/api/v1/status/{session_id}` | Poll progress (0–100%), current step, logs |
+| `GET` | `/api/v1/results/{session_id}` | Get full results JSON when completed |
+| `GET` | `/api/v1/download/{session_id}` | Download cleaned CSV as file |
+
+### Upload Response Example
+
+```json
+{
+  "session_id": "62dd1db6-aac4-4273-afec-abf8eaed6d0b",
+  "filename": "customer_churn.csv",
+  "columns": ["age", "tenure", "monthly_charges", "churn"],
+  "shape": [1000, 4],
+  "preview": [
+    {"age": 25, "tenure": 12, "monthly_charges": 65.5, "churn": 0}
+  ]
+}
+```
+
+### Status Response Example
+
+```json
+{
+  "status": "running",
+  "progress": 60,
+  "current_step": "Model Training",
+  "logs": [
+    "[Data Understanding] Loading dataset...",
+    "[Data Understanding] Problem type: classification. Shape: (1000, 4)",
+    "[Data Cleaning] Clean shape: (998, 4)",
+    "[Feature Engineering] Features: 3",
+    "[Statistical Analysis] Statistics complete.",
+    "[Model Training] Training models..."
+  ]
+}
+```
+
+### Results Response Example
+
+```json
+{
+  "session_id": "62dd1db6-...",
+  "problem_type": "classification",
+  "best_model": "Random Forest",
+  "model_metrics": [
+    {
+      "model_name": "Random Forest",
+      "cv_mean": 0.9124,
+      "cv_std": 0.0213,
+      "accuracy": 0.935,
+      "f1_score": 0.9298,
+      "roc_auc": 0.9712,
+      "train_time_sec": 0.453
+    }
+  ],
+  "feature_importance": [
+    {"feature": "monthly_charges", "importance": 0.4821},
+    {"feature": "tenure", "importance": 0.3104}
+  ],
+  "statistics": { ... },
+  "correlation_matrix": { ... }
+}
+```
+
+### Full Example Flow (curl)
+
+```powershell
+# 1. Upload CSV
+curl -X POST -F "file=@mydata.csv" http://localhost:8000/api/v1/upload
+
+# 2. Start analysis (replace session_id with value from step 1)
+curl -X POST http://localhost:8000/api/v1/analyze `
+  -H "Content-Type: application/json" `
+  -d '{"session_id":"YOUR_SESSION_ID","target_column":"churn"}'
+
+# 3. Poll status until "completed"
+curl http://localhost:8000/api/v1/status/YOUR_SESSION_ID
+
+# 4. Get results
+curl http://localhost:8000/api/v1/results/YOUR_SESSION_ID
+
+# 5. Download cleaned CSV
+curl http://localhost:8000/api/v1/download/YOUR_SESSION_ID -o cleaned_data.csv
+```
+
+---
+
+## Download Features
+
+### Cleaned CSV
+
+**Button:** `⬇ Cleaned CSV` on the Results page
+
+**What it contains:** The original dataset after running through the full cleaning pipeline:
+- Duplicate rows removed
+- Numeric null values filled with column median
+- Categorical null values filled with column mode
+- Categorical columns label-encoded to numeric
+
+**How it works:** Calls `GET /api/v1/download/{session_id}` → backend re-runs the cleaning modules on the stored original file → streams back as `filename_cleaned.csv`.
+
+**Use case:** Take the cleaned data and use it in other tools (Excel, Jupyter, another ML platform) without having to clean it yourself.
+
+---
+
+### PDF Report
+
+**Button:** `📄 PDF Report` on the Results page
+
+**What it contains (A4 format):**
+- Dark header with DataPilot AI branding and timestamp
+- Dataset info row (problem type, best model, models tested, features used)
+- Best model banner with all key metrics
+- Full model comparison table with all models and metrics
+- Feature importance bars (top 15, color-coded by rank)
+- Correlation matrix heatmap (color-coded cells with values)
+- Page footer with page numbers
+
+**How it works:** Runs entirely in the browser. On first click, loads jsPDF 2.5.1 from the Cloudflare CDN. Generates the PDF using native jsPDF drawing commands (no screenshots, no html2canvas). Downloads as `datapilot_report_timestamp.pdf`.
+
+**No npm install needed** — jsPDF loads automatically on first click.
 
 ---
 
 ## Known Issues & Fixes
 
-These are real issues encountered during development with their solutions documented.
+These are real issues encountered during development, documented so you don't hit them again.
 
 ---
 
-### ❌ Issue 1: `.env` UnicodeDecodeError — `utf-8 codec can't decode byte 0xff`
+### ❌ Issue 1 — `.env` UnicodeDecodeError: `utf-8 codec can't decode byte 0xff`
 
-**Symptom:**
+**Full error:**
 ```
 UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
 ```
 
-**Cause:** The `.env` file was created with PowerShell's `Out-File` which defaults to UTF-16 encoding. The dotenv parser requires UTF-8.
+**Cause:** PowerShell's `Out-File` saves UTF-16 (with BOM) by default. The python-dotenv parser requires pure UTF-8.
 
-**Fix:** Recreate the `.env` file with explicit UTF-8 encoding:
+**Fix — choose one method:**
 ```powershell
-# Method 1 — PowerShell with explicit encoding
+# Method 1: PowerShell with explicit encoding flag
 @"
 MONGODB_URL=mongodb://127.0.0.1:27017
 MONGODB_DB=datapilot
 "@ | Out-File .env -Encoding UTF8
 
-# Method 2 — Use VS Code to create the file (always saves as UTF-8)
-# Method 3 — Use Notepad → Save As → Encoding: UTF-8
+# Method 2: Create the file in VS Code (File > New File > Save As .env)
+# VS Code always saves as UTF-8 by default
+
+# Method 3: Notepad → File > Save As → change Encoding dropdown to UTF-8
 ```
 
 ---
 
-### ❌ Issue 2: `error parsing value for field "ALLOWED_ORIGINS"`
+### ❌ Issue 2 — `error parsing value for field "ALLOWED_ORIGINS"`
 
-**Symptom:**
+**Full error:**
 ```
 pydantic_settings.sources.SettingsError: error parsing value for field "ALLOWED_ORIGINS"
+from source "DotEnvSettingsSource"
 ```
 
-**Cause:** Pydantic-settings v2 tries to JSON-parse any `List[str]` field read from `.env`. A comma-separated string like `http://a,http://b` fails JSON parsing. Even a JSON array `["http://a"]` can fail if the file has encoding issues.
+**Cause:** Pydantic-settings v2 automatically tries to JSON-parse any field typed as `List[str]` before any validator can run. A comma-separated string (`http://a,http://b`) fails JSON parsing. Even a correctly formatted JSON array can fail if the `.env` file has encoding issues.
 
-**Fix:** `ALLOWED_ORIGINS` is hardcoded as a Python list in `config.py` and intentionally excluded from `.env`. This completely bypasses pydantic-settings' automatic JSON parsing. If you need to change allowed origins, edit `config.py` directly:
+**Fix:** `ALLOWED_ORIGINS` is removed from `.env` entirely and hardcoded as a Python list in `config.py`. To change allowed origins (e.g. for production), edit `config.py` directly:
 
 ```python
+# backend/app/core/config.py
 ALLOWED_ORIGINS: List[str] = [
     "http://localhost:5173",
     "http://localhost:3000",
     "http://localhost:8000",
+    # Add your production URL here:
+    # "https://your-production-domain.com",
 ]
 ```
 
 ---
 
-### ❌ Issue 3: `ImportError: cannot import name '_QUERY_OPTIONS' from 'pymongo.cursor'`
+### ❌ Issue 3 — `ImportError: cannot import name '_QUERY_OPTIONS'`
 
-**Symptom:**
+**Full error:**
 ```
 ImportError: cannot import name '_QUERY_OPTIONS' from 'pymongo.cursor'
 ```
 
-**Cause:** Version mismatch between `motor` and `pymongo`. PyMongo 4.5+ removed the internal `_QUERY_OPTIONS` API that older motor versions (≤ 3.2) depended on.
+**Cause:** `motor==3.2.0` is incompatible with `pymongo>=4.5`. PyMongo 4.5 removed the internal `_QUERY_OPTIONS` attribute that older Motor versions depended on.
 
-**Fix:** Upgrade both packages together:
+**Fix:** Upgrade both packages to compatible versions:
 ```powershell
 pip install "motor==3.7.1" "pymongo==4.10.1"
 ```
 
-The `requirements.txt` in this repo already specifies the correct compatible versions. If you ever recreate the venv, run `pip install -r requirements.txt` and this will be handled automatically.
+The `requirements.txt` in this repo already has the correct versions pinned. Always use `pip install -r requirements.txt` rather than installing packages individually to avoid version drift.
 
 ---
 
-### ⚠️ Warning: `n_splits=5 cannot be greater than the number of members in each class`
+### ⚠️ Warning — `n_splits=5 cannot be greater than the number of members in each class`
 
-**Symptom:** Console warning during model evaluation (not a crash):
+**Full message:**
 ```
 Cross-validation failed: n_splits=5 cannot be greater than the number of members in each class.
 ```
 
-**Cause:** Your dataset is too small for 5-fold cross-validation. Each class needs at least 5 samples. This warning appears with toy/test datasets of fewer than ~50 rows.
+**Cause:** Your dataset has fewer than 5 samples per class, so 5-fold CV is impossible. This commonly appears with small test datasets (< 50 rows).
 
-**This is handled automatically.** The code falls back to a simpler scoring method when CV fails. Results are still returned correctly.
+**This is not a crash.** The code catches this exception and falls back to a simple train-score evaluation. Results are still returned correctly.
 
-**If you want to suppress it:** Reduce `CV_FOLDS` in `.env` to match your smallest class size:
+**To suppress the warning**, reduce `CV_FOLDS` in `.env`:
 ```env
 CV_FOLDS=2
 ```
 
 ---
 
-## API Reference
+### ❌ Issue 4 — `does not provide an export named 'C'` (frontend)
 
-Base URL: `http://localhost:8000`
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check → `{"status":"ok"}` |
-| `POST` | `/api/v1/upload` | Upload CSV file |
-| `POST` | `/api/v1/analyze` | Start ML pipeline |
-| `GET` | `/api/v1/status/{session_id}` | Poll pipeline progress |
-| `GET` | `/api/v1/results/{session_id}` | Get final results |
-
-Interactive API docs: **http://localhost:8000/docs**
-
-### Example: Upload + Analyze flow
-
-```powershell
-# 1. Upload CSV
-curl -X POST -F "file=@mydata.csv" http://localhost:8000/api/v1/upload
-# Response: { "session_id": "abc-123", "columns": [...], "shape": [100, 5] }
-
-# 2. Start analysis
-curl -X POST http://localhost:8000/api/v1/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"session_id":"abc-123","target_column":"label"}'
-
-# 3. Poll status
-curl http://localhost:8000/api/v1/status/abc-123
-# Response: { "status": "running", "progress": 60, "current_step": "Model Training", "logs": [...] }
-
-# 4. Get results (once status = "completed")
-curl http://localhost:8000/api/v1/results/abc-123
+**Full error in browser console:**
+```
+Pages.jsx:3  Uncaught SyntaxError: The requested module '/src/constants.jsx'
+does not provide an export named 'C'
 ```
 
----
+**Cause:** Multiple conflicting utility files exist in `src/` — e.g. `constants.jsx`, `config.jsx`, `Utils.jsx` — with overlapping or missing exports. Vite resolves the wrong file.
 
-## Frontend Pages
+**Fix:** The `src/` directory must contain **exactly** these files and no others:
 
-### Upload Page (`/`)
-- Drag-and-drop or click to upload CSV
-- Preview first 5 rows and column names
-- Select target column via chips or dropdown
-- Start analysis button
+```
+src/
+├── App.jsx           ← imports from ./constants, ./Pages, ./ResultsPage
+├── Pages.jsx         ← imports from ./constants
+├── ResultsPage.jsx   ← imports from ./constants
+├── constants.jsx     ← exports: C, CHART_COLORS, PIPELINE_STEPS, Card,
+│                        Label, Metric, ChartTooltip
+├── main.jsx          ← do not modify
+├── App.css           ← keep as-is
+└── index.css         ← keep as-is
+```
 
-### Processing Page
-- Real-time progress bar (polls every 2 seconds)
-- Pipeline step tracker (6 steps with live status)
-- Live log console with color-coded messages
-- Auto-redirects to Results when complete
-
-### Results Page
-- Best model banner with key metrics
-- Model comparison bar chart (CV Score, Accuracy, F1 or R²)
-- Feature importance horizontal bar chart (top 10)
-- Correlation matrix heatmap (SVG, color-coded teal/red)
-- Full metrics table with all models
-- Download Report button (exports CSV)
-
----
-
-## ML Pipeline
-
-The pipeline runs 6 sequential stages:
-
-| Stage | Module | What it does |
-|---|---|---|
-| Data Understanding | `data_understanding.py` | Detects column types, null values, problem type |
-| Data Cleaning | `data_cleaning.py` | Removes duplicates, fills nulls, encodes categoricals |
-| Feature Engineering | `feature_engineering.py` | Scales numerics, prepares X and y matrices |
-| Statistical Analysis | `statistical_analysis.py` | Descriptive stats, correlation matrix |
-| Model Training | `model_training.py` | Trains 3 models in parallel |
-| Model Evaluation | `model_evaluation.py` | Cross-validation, test metrics, best model selection |
-
-### Models Trained
-
-**Classification:** Logistic Regression, Random Forest, Gradient Boosting
-
-**Regression:** Linear Regression, Random Forest Regressor, Gradient Boosting Regressor
-
-### Evaluation Metrics
-
-**Classification:** Accuracy, F1 Score (weighted), ROC-AUC
-
-**Regression:** RMSE, R²
-
-Best model is selected by highest cross-validation mean score.
+Delete any extra files: `config.jsx`, `Utils.jsx`, `utils.jsx`, `pages.jsx` (lowercase), or any other duplicates.
 
 ---
 
 ## Performance Notes
 
-| Dataset Size | Expected Time |
+| Dataset Size | Expected Analysis Time |
 |---|---|
 | < 1,000 rows | 10–30 seconds |
 | 1,000–10,000 rows | 1–5 minutes |
-| > 10,000 rows | 5–15 minutes |
+| 10,000–100,000 rows | 5–15 minutes |
+| > 100,000 rows | May hit memory limits |
 
-To speed up large datasets:
+**To speed up large datasets**, reduce in `.env`:
 ```env
-CV_FOLDS=3
-TEST_SIZE=0.1
+CV_FOLDS=3       # Default 5 — fewer folds = faster
+TEST_SIZE=0.1    # Default 0.2 — smaller test set = more training data, faster CV
 ```
+
+**Memory tip:** Ensure MongoDB has sufficient RAM. For datasets > 50,000 rows, monitor backend memory usage.
 
 ---
 
 ## Deployment
 
-### Production Docker Build
+### Option 1 — Docker Compose (Recommended for VPS/Server)
 
 ```powershell
+# Production start (detached)
 docker compose up --build -d
+
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Stop
+docker compose down
 ```
 
-### Frontend Production Build (standalone)
+### Option 2 — Frontend Only (Static Hosting)
 
 ```powershell
 cd frontend
 npm run build
-# Output in dist/ — deploy to Vercel, Netlify, or any static host
+# Creates optimized production build in dist/
+# Deploy dist/ to Vercel, Netlify, GitHub Pages, or any CDN
 ```
 
-### Cloud Options
+Preview the production build locally:
+```powershell
+npm run preview
+```
+
+### Option 3 — Kubernetes
+
+Manifests are in the `k8s/` directory:
+```powershell
+kubectl apply -f k8s/
+```
+
+### Cloud Deployment Options
 
 | Component | Recommended Services |
 |---|---|
-| Backend | Azure App Service, AWS EC2, Google Cloud Run |
-| Frontend | Vercel, Netlify, GitHub Pages |
-| Database | MongoDB Atlas |
+| Backend (FastAPI) | Azure App Service, AWS EC2, Google Cloud Run, Railway |
+| Frontend (React) | Vercel, Netlify, GitHub Pages, Cloudflare Pages |
+| Database (MongoDB) | MongoDB Atlas (managed), or self-hosted on VPS |
 
-### Kubernetes
-
-Manifests are in the `k8s/` directory. Apply with:
-```powershell
-kubectl apply -f k8s/
+**For production**, update `config.py` with your production domain in `ALLOWED_ORIGINS`:
+```python
+ALLOWED_ORIGINS: List[str] = [
+    "https://your-app.vercel.app",
+    "https://your-custom-domain.com",
+]
 ```
 
 ---
 
 ## Troubleshooting Checklist
 
-Before reporting an issue, verify:
+Work through this list before asking for help:
 
-- [ ] MongoDB is running (`mongosh` connects successfully)
-- [ ] Virtual environment is activated (`(venv)` shows in terminal)
-- [ ] `.env` file is UTF-8 encoded (not UTF-16)
-- [ ] `ALLOWED_ORIGINS` is NOT in `.env` — it's in `config.py`
-- [ ] motor and pymongo versions are compatible (`motor==3.7.1`, `pymongo==4.10.1`)
+- [ ] MongoDB is running — `mongosh` connects without error
+- [ ] Virtual environment is activated — `(venv)` shows at start of terminal prompt
+- [ ] `.env` is UTF-8 encoded — not UTF-16 (see Issue #1)
+- [ ] `ALLOWED_ORIGINS` is **not** in `.env` — it lives only in `config.py` (see Issue #2)
+- [ ] Motor and PyMongo are compatible versions — `motor==3.7.1` + `pymongo==4.10.1` (see Issue #3)
+- [ ] `src/` has no duplicate utility files — only `constants.jsx`, no `utils.jsx` or `config.jsx` (see Issue #4)
 - [ ] Frontend `.env` has `VITE_API_BASE_URL=http://localhost:8000`
-- [ ] Both backend (port 8000) and frontend (port 5173) are running
+- [ ] Backend is running on port 8000 — visit http://localhost:8000/health
+- [ ] Frontend is running on port 5173 — visit http://localhost:5173
+- [ ] Browser console (F12) shows no import errors
+- [ ] For Docker: both `backend` and `frontend` containers show as healthy in `docker compose ps`
+
+---
+
+## What To Build Next
+
+Features remaining from the original master plan, in recommended build order:
+
+| Priority | Feature | Status |
+|---|---|---|
+| 🔴 High | GitHub Actions CI/CD pipeline | Not started |
+| 🔴 High | Kubernetes manifests (k8s/ is empty) | Not started |
+| 🟡 Medium | Exclude columns feature (ignore ID/name/date columns before analysis) | Not started |
+| 🟡 Medium | Model saving + `/predict` endpoint (save best model with joblib, run predictions on new data) | Not started |
+| 🟡 Medium | Session history page (view past analyses without re-running) | Not started |
+| 🟢 Low | Tailwind CSS migration (replace inline styles) | Not started |
+| 🟢 Low | More ML models (XGBoost, LightGBM, SVM, KNN) | Not started |
 
 ---
 
@@ -511,4 +769,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 ---
 
 **Built for the data science community.**
-For questions, open an issue on GitHub.
+For questions or issues, open a ticket on GitHub.
