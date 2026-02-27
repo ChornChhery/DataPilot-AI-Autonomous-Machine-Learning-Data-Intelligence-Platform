@@ -1,28 +1,197 @@
-# Backend Setup Guide - DataPilot AI
+# DataPilot AI Backend Setup - Simple Step-by-Step Guide
 
-Complete step-by-step instructions to set up and run the DataPilot AI backend on Windows, macOS, or Linux.
+This guide will help you set up the DataPilot AI backend easily, even if you're new to Python development.
 
-## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Quick Install](#quick-install)
-- [Detailed Setup](#detailed-setup)
-- [Configuration](#configuration)
-- [Running the Server](#running-the-server)
-- [Testing APIs](#testing-apis)
-- [Troubleshooting](#troubleshooting)
+## 🎯 What You'll Do
+1. Check if you have the right software installed
+2. Create a Python virtual environment (like a safe sandbox)
+3. Install all required packages
+4. Configure your settings
+5. Start the server
+6. Test that everything works
 
-## Prerequisites
+## ✅ Step 1: Check Your Software
 
-### Requirements
-- **Python**: 3.12.x ([Download](https://www.python.org/downloads/))
-- **MongoDB**: 8.2.5 ([Download](https://www.mongodb.com/try/download/community))
+First, let's make sure you have everything you need:
 
-### Verify Installations
+Open Command Prompt or PowerShell and run these commands:
 
 ```powershell
-python --version        # Should show: Python 3.12.x
-mongod --version       # Should show: db version v8.2.5
+python --version
 ```
+**You should see:** `Python 3.12.9` (or similar 3.12.x version)
+
+```powershell
+mongod --version
+```
+**You should see:** `db version v8.2.5`
+
+If you don't have these versions, you'll need to install them first:
+- **Python 3.12**: [Download here](https://www.python.org/downloads/)
+- **MongoDB 8.2.5**: [Download here](https://www.mongodb.com/try/download/community)
+
+## 📦 Step 2: Navigate to Backend Folder
+
+```powershell
+cd D:\Jame\DataPilot_AI\backend
+```
+
+You should now be in the backend folder. You can verify by listing files:
+```powershell
+dir
+```
+You should see files like `requirements.txt`, `app/` folder, etc.
+
+## 🌍 Step 3: Create Virtual Environment
+
+This creates a isolated Python environment for your project:
+
+```powershell
+python -m venv venv
+```
+
+This creates a `venv` folder. Now activate it:
+
+```powershell
+venv\Scripts\activate
+```
+
+**You should now see `(venv)` at the beginning of your command prompt.**
+
+## 📥 Step 4: Install Required Packages
+
+Now install all the software your backend needs:
+
+```powershell
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+This will take 2-3 minutes. You'll see lots of package names scrolling by - this is normal!
+
+## 🛠️ Step 5: Start MongoDB Database
+
+MongoDB needs to be running for your backend to work.
+
+**Check if it's already running:*
+```powershell
+mongosh
+```
+
+If you see a MongoDB prompt, type `exit` to close it. MongoDB is running!
+
+**If MongoDB isn't running, start it:*
+```powershell
+mongod --dbpath "C:\data\db"
+```
+
+*Note: You might need to create the `C:\data\db` folder first*
+
+## ⚙️ Step 6: Configure Your Settings
+
+Create a file called `.env` in your backend folder with these settings:
+
+```env
+MONGODB_URL=mongodb://127.0.0.1:27017
+MONGODB_DB=datapilot
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8000
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE_MB=100
+CV_FOLDS=5
+TEST_SIZE=0.2
+RANDOM_STATE=42
+DEBUG=False
+APP_NAME=AutoML Agent Platform
+```
+
+## ▶️ Step 7: Start the Backend Server
+
+Make sure you're still in the `(venv)` environment, then run:
+
+```powershell
+uvicorn app.main:app --reload --port 8000
+```
+
+**You should see output like this:**
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Started server process [xxxxx]
+2026-02-27 11:19:52,460 [INFO] app.core.database — Connected to MongoDB: datapilot
+INFO:     Application startup complete.
+```
+
+**🎉 Congratulations! Your backend is now running!**
+
+## 🧪 Step 8: Test Your Backend
+
+Open your web browser and go to: **http://localhost:8000/health**
+
+You should see: `{"status":"ok"}`
+
+You can also check the API documentation at: **http://localhost:8000/docs**
+
+## 🔄 Keeping Your Backend Running
+
+- Keep the terminal window open
+- The server will automatically restart when you change code (thanks to `--reload`)
+- To stop the server: Press `Ctrl+C` in the terminal
+
+## 🚨 Common Problems and Solutions
+
+### Problem: "python is not recognized"
+**Solution:** Python isn't in your PATH. Reinstall Python and check "Add to PATH" during installation.
+
+### Problem: "mongod is not recognized"
+**Solution:** MongoDB isn't installed or isn't in your PATH. Install MongoDB from the link above.
+
+### Problem: "ModuleNotFoundError"
+**Solution:** Make sure you:
+1. Activated your virtual environment (`venv\Scripts\activate`)
+2. Installed requirements (`pip install -r requirements.txt`)
+
+### Problem: "Cannot connect to MongoDB"
+**Solution:** Make sure MongoDB is running:
+```powershell
+mongod --dbpath "C:\data\db"
+```
+
+### Problem: "Port 8000 is already in use"
+**Solution:** Either kill the process using port 8000, or use a different port:
+```powershell
+uvicorn app.main:app --reload --port 8001
+```
+
+## 📁 Your Backend Folder Structure
+
+```
+backend/
+├── venv/           # Your Python virtual environment
+├── app/            # Main application code
+│   ├── main.py     # Starting point
+│   ├── api/        # API endpoints
+│   ├── core/       # Configuration and database
+│   └── modules/    # Machine learning functions
+├── uploads/        # Where uploaded CSV files are stored
+├── .env            # Your configuration file
+└── requirements.txt # List of required packages
+```
+
+## 🎯 Next Steps
+
+✅ Backend is running on http://localhost:8000
+
+Now set up the frontend:
+```powershell
+cd ..\frontend
+npm install
+npm run dev
+```
+
+Then open: http://localhost:5173
+
+---
+
+**Need help?** Check the common problems section above or ask for assistance!
 
 ## Quick Install
 

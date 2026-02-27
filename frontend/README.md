@@ -1,60 +1,194 @@
-# Frontend Setup Guide - DataPilot AI
+# DataPilot AI Frontend Setup - Simple Guide
 
-Complete step-by-step instructions to set up and run the DataPilot AI frontend on Windows.
+This guide will walk you through setting up the DataPilot AI frontend step by step.
 
-## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Quick Install](#quick-install)
-- [Detailed Setup](#detailed-setup)
-- [Configuration](#configuration)
-- [Running the Server](#running-the-server)
-- [Testing the Frontend](#testing-the-frontend)
-- [Troubleshooting](#troubleshooting)
-- [Directory Structure](#directory-structure)
-- [Next Steps](#next-steps)
+## 🎯 What You'll Do
+1. Check if Node.js is installed
+2. Navigate to the frontend folder
+3. Install all required packages
+4. Configure the connection to your backend
+5. Start the development server
+6. Test that everything works
 
----
+## ✅ Step 1: Check Your Software
 
-## Prerequisites
-
-### Requirements
-- **Node.js**: 24.x
-- **npm**: 10.x (comes with Node.js)
-- **Backend running**: On port 8000 (see [../backend/README.md](../backend/README.md))
-
-### Verify Installation
+Open Command Prompt or PowerShell and run:
 
 ```powershell
-node --version    # Should show v24.x.x
-npm --version     # Should show 10.x.x
+node --version
 ```
+**You should see:** `v24.11.1` (or similar 24.x version)
 
----
+```powershell
+npm --version
+```
+**You should see:** `10.x.x` (or higher)
 
-## Quick Install
+If you don't have these, download Node.js from [nodejs.org](https://nodejs.org/)
 
-For experienced developers, here's the fast path:
+## 📁 Step 2: Navigate to Frontend Folder
 
 ```powershell
 cd D:\Jame\DataPilot_AI\frontend
+```
+
+Verify you're in the right place:
+```powershell
+dir
+```
+You should see `package.json`, `src/` folder, etc.
+
+## 📥 Step 3: Install Required Packages
+
+This downloads all the libraries your frontend needs:
+
+```powershell
 npm install
 ```
 
-Then create `.env`:
+This will take 1-2 minutes. You'll see a progress bar and package names.
 
+**Note:** If this fails, try:
 ```powershell
-@"
-VITE_API_BASE_URL=http://localhost:8000
-"@ | Out-File .env -Encoding UTF8
+npm cache clean --force
+Remove-Item -Recurse node_modules
+npm install
 ```
 
-Finally start it:
+## ⚙️ Step 4: Configure Backend Connection
+
+Create a file called `.env` in your frontend folder:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+This tells your frontend where to find the backend server.
+
+## ▶️ Step 5: Start the Frontend Server
 
 ```powershell
 npm run dev
 ```
 
-Open: **http://localhost:5173** ✨
+**You should see output like:**
+```
+VITE v5.0.8  dev server running at:
+
+  ➜  Local:   http://localhost:5173/
+  ➜  press h to show help
+```
+
+## 🌐 Step 6: Open in Your Browser
+
+Open your web browser and go to: **http://localhost:5173**
+
+You should see the DataPilot AI upload interface!
+
+## 🧪 Step 7: Test Everything Works
+
+1. **Page Loads**: You should see the file upload area
+2. **Backend Connection**: The "CONNECTED TO BACKEND" indicator should be visible
+3. **File Upload**: Try uploading the `test_sample.csv` file
+4. **Analysis**: Select "education_score" as target and click "Start Autonomous Analysis"
+
+## 🔄 Keeping Your Frontend Running
+
+- Keep the terminal window open
+- The server will automatically reload when you change code
+- To stop: Press `Ctrl+C` in the terminal
+
+## 🚨 Common Problems and Solutions
+
+### Problem: "npm is not recognized"
+**Solution:** Node.js isn't installed properly. Reinstall from [nodejs.org](https://nodejs.org/)
+
+### Problem: "Cannot find module 'react'"
+**Solution:** Packages not installed. Run:
+```powershell
+npm install
+```
+
+### Problem: "Port 5173 is already in use"
+**Solution:** Use a different port:
+```powershell
+npm run dev -- --port 5174
+```
+
+### Problem: "Cannot connect to backend"
+**Checklist:**
+1. Is your backend running? (Check http://localhost:8000/health)
+2. Is the `.env` file correct?
+3. Did you restart the frontend after changing `.env`?
+
+### Problem: "CORS Error" in browser console
+**Solution:**
+1. Make sure backend is running
+2. Check backend `.env` has: `ALLOWED_ORIGINS=http://localhost:5173`
+3. Restart backend server
+
+### Problem: Upload doesn't work
+**Checklist:**
+1. Backend is running
+2. MongoDB is running
+3. File is a valid CSV
+4. Check browser console (F12) for error messages
+
+## 📁 Your Frontend Folder Structure
+
+```
+frontend/
+├── src/              # Source code
+│   ├── App.jsx       # Main application
+│   ├── main.jsx      # Entry point
+│   └── assets/       # Images, etc.
+├── public/           # Static files
+├── node_modules/     # Installed packages
+├── .env              # Configuration
+├── package.json      # Dependencies list
+└── vite.config.js    # Build configuration
+```
+
+## 🎯 Next Steps
+
+✅ Frontend is running on http://localhost:5173
+✅ Backend should be running on http://localhost:8000
+
+Now you can:
+1. Upload CSV files
+2. Run automated machine learning analysis
+3. View results and model comparisons
+
+## 🛠️ Useful Commands
+
+```powershell
+# Start development server
+npm run dev
+
+# Create production build
+npm run build
+
+# Preview production build
+npm run preview
+
+# Check for code problems
+npm run lint
+```
+
+## 🎨 What You Can Do
+
+- **Upload CSV files** via drag & drop or file browser
+- **Select target columns** to predict
+- **Watch real-time progress** of analysis
+- **View detailed results** including:
+  - Model performance comparisons
+  - Feature importance rankings
+  - Statistical analysis
+  - Best model recommendations
+
+---
+
+**Need help?** Check the common problems section above or make sure your backend is running properly!
 
 ---
 
