@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+
+  # ── MongoDB ────────────────────────────────────────────────
+  mongodb:
+    image: mongo:8
+    container_name: datapilot_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: datapilot
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (FastAPI) ──────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: datapilot_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app          # Hot reload in dev
+      - uploads_data:/app/uploads
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DB: datapilot
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost:80,http://frontend
+      UPLOAD_DIR: uploads
+      MAX_FILE_SIZE_MB: 100
+      CV_FOLDS: 5
+      TEST_SIZE: 0.2
+      RANDOM_STATE: 42
+      DEBUG: "false"
+      APP_NAME: AutoML Agent Platform
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Frontend (React / Vite dev) ────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    container_name: datapilot_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+  uploads_data:
