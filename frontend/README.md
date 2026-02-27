@@ -1,39 +1,64 @@
 # Frontend Setup Guide - DataPilot AI
 
-This guide provides step-by-step instructions to set up and run the DataPilot AI frontend on Windows, macOS, or Linux.
+Complete step-by-step instructions to set up and run the DataPilot AI frontend on Windows.
 
 ## Table of Contents
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
+- [Quick Install](#quick-install)
+- [Detailed Setup](#detailed-setup)
 - [Configuration](#configuration)
-- [Running the Frontend](#running-the-frontend)
-- [Development](#development)
-- [Building for Production](#building-for-production)
+- [Running the Server](#running-the-server)
+- [Testing the Frontend](#testing-the-frontend)
 - [Troubleshooting](#troubleshooting)
-- [Docker Setup (Optional)](#docker-setup-optional)
+- [Directory Structure](#directory-structure)
+- [Next Steps](#next-steps)
+
+---
 
 ## Prerequisites
 
-### System Requirements
-- **Node.js**: 24.x ([Download](https://nodejs.org/))
+### Requirements
+- **Node.js**: 24.x
 - **npm**: 10.x (comes with Node.js)
-- **Git**: For cloning the repository
-- **RAM**: 2GB minimum
-- **Disk Space**: 500MB minimum
-- **Backend**: Must be running on http://localhost:8000
+- **Backend running**: On port 8000 (see [../backend/README.md](../backend/README.md))
 
-### Verify Installations
-
-Open a terminal/PowerShell and run:
+### Verify Installation
 
 ```powershell
-node --version          # Should show: v24.x.x
-npm --version          # Should show: 10.x.x
+node --version    # Should show v24.x.x
+npm --version     # Should show 10.x.x
 ```
 
-If any command is not recognized, install Node.js from [nodejs.org](https://nodejs.org/).
+---
 
-## Installation
+## Quick Install
+
+For experienced developers, here's the fast path:
+
+```powershell
+cd D:\Jame\DataPilot_AI\frontend
+npm install
+```
+
+Then create `.env`:
+
+```powershell
+@"
+VITE_API_BASE_URL=http://localhost:8000
+"@ | Out-File .env -Encoding UTF8
+```
+
+Finally start it:
+
+```powershell
+npm run dev
+```
+
+Open: **http://localhost:5173** ✨
+
+---
+
+## Detailed Setup
 
 ### Step 1: Navigate to Frontend Directory
 
@@ -41,185 +66,170 @@ If any command is not recognized, install Node.js from [nodejs.org](https://node
 cd D:\Jame\DataPilot_AI\frontend
 ```
 
-### Step 2: Install Dependencies
+Expected output:
+```
+D:\Jame\DataPilot_AI\frontend>
+```
 
-Install all required npm packages:
+### Step 2: Install Dependencies
 
 ```powershell
 npm install
 ```
 
-This installs:
-- React 18.2.0
-- Vite 5.0.8 (build tool)
-- Axios 1.6.0 (HTTP client)
-- Zustand 4.4.0 (state management)
-- React Router DOM 6.20.0 (routing)
+This reads `package.json` and installs all required packages into `node_modules/`.
 
-**Note**: First install may take 1-2 minutes.
-
-### Step 3: Verify Installation
-
-Check that dependencies are installed correctly:
-
-```powershell
-# List installed packages
-npm list
-
-# Should show React, Vite, Axios, and other packages
+Expected output:
+```
+added 387 packages in 15s
 ```
 
-## Configuration
+### Step 3: Create Environment File
 
-### Step 1: Create .env File
+Create `.env` file in frontend directory with backend URL:
 
-Create a `.env` file in the `frontend` directory:
+```powershell
+@"
+VITE_API_BASE_URL=http://localhost:8000
+"@ | Out-File .env -Encoding UTF8
+```
 
-```env
-# API Configuration
+Verify it was created:
+
+```powershell
+cat .env
+```
+
+Expected output:
+```
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-This tells the frontend where to find the backend API.
+### Step 4: Verify Backend is Running
 
-### Step 2: Update Vite Config (if needed)
-
-The `vite.config.js` should already have proxy settings:
-
-```javascript
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      }
-    }
-  }
-})
-```
-
-This configuration:
-- Runs frontend on port 5173
-- Proxies `/api` calls to backend on port 8000
-- Allows you to use relative paths like `/api/v1/upload`
-
-## Running the Frontend
-
-### Start Development Server
+Before starting frontend, ensure backend is healthy:
 
 ```powershell
-cd D:\Jame\DataPilot_AI\frontend
+curl http://localhost:8000/health
+```
 
-# Start the development server
+Expected output:
+```json
+{"status":"ok"}
+```
+
+If you get a connection error, start the backend first following [../backend/README.md](../backend/README.md).
+
+### Step 5: Start Development Server
+
+```powershell
 npm run dev
 ```
 
-### Expected Output
-
+Expected output:
 ```
-VITE v5.0.8  ready in 234 ms
+VITE v5.0.8  dev server running at:
 
-➜  Local:   http://127.0.0.1:5173/
-➜  press h + enter to show help
+  ➜  Local:   http://localhost:5173/
+  ➜  press h to show help
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Edit `.env` file (created in Step 3):
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API URL (must start with `VITE_` for Vite) |
+
+**Note**: After changing `.env`, restart `npm run dev` for changes to take effect.
+
+### Available Scripts
+
+In the `package.json`, you can run these commands:
+
+```powershell
+npm run dev       # Start dev server on port 5173
+npm run build     # Create production build in dist/
+npm run preview   # Preview production build locally
+```
+
+To use a different port:
+
+```powershell
+npm run dev -- --port 5174
+```
+
+---
+
+## Running the Server
+
+### Start the Frontend
+
+```powershell
+npm run dev
+```
+
+You should see:
+```
+  ➜  Local:   http://localhost:5173/
 ```
 
 ### Access the Application
 
-Open your browser and go to:
-- **Development URL**: http://localhost:5173
-- **Backend API Docs**: http://localhost:8000/docs (while backend is running)
+Open your browser and go to: **http://localhost:5173**
 
-### Stop Development Server
+You should see:
+- File upload area with drag-and-drop support
+- Column selection interface
+- Ready to upload a CSV file
 
-Press `CTRL+C` in the terminal where the dev server is running.
+### Keep It Running
 
-## Development
+The dev server stays running. Keep this terminal open while developing.
 
-### Project Structure
+To stop: Press `Ctrl+C` in the terminal.
 
-```
-frontend/
-├── src/
-│   ├── components/          # Reusable React components
-│   ├── hooks/               # Custom React hooks
-│   ├── pages/               # Page components
-│   │   ├── App.jsx         # Main app component
-│   │   └── App.css         # Styling
-│   ├── utils/              # Utility functions
-│   ├── main.jsx            # Entry point
-│   └── index.css            # Global styles
-├── public/                  # Static files
-├── index.html              # Main HTML file
-├── package.json            # Dependencies
-├── vite.config.js          # Vite configuration
-├── .env                    # Environment variables
-└── README.md              # This file
-```
+---
 
-### Available Scripts
+## Testing the Frontend
 
-```powershell
-# Development server with hot reload
-npm run dev
+### Test 1: Page Loads
 
-# Build for production
-npm run build
+1. Open http://localhost:5173
+2. You should see the upload interface
+3. Check browser console (F12 → Console) for any errors
 
-# Preview production build locally
-npm run preview
+Expected: No error messages
 
-# Run development with verbose output
-npm run dev -- --debug
+### Test 2: Backend Connection
 
-# Build with detailed output
-npm run build -- --debug
+1. In browser console (F12 → Console), run:
+```javascript
+fetch('http://localhost:8000/health').then(r => r.json()).then(d => console.log(d))
 ```
 
-### Hot Module Replacement (HMR)
-
-When you edit a file in `src/`, the browser automatically reloads the changes. No manual refresh needed!
-
-## Building for Production
-
-### Create Production Build
-
-```powershell
-npm run build
+Expected output in console:
+```
+{status: 'ok'}
 ```
 
-This creates:
-- **Output Directory**: `dist/`
-- **File Size**: ~200KB (gzipped)
-- **Optimization**: Minified, tree-shaken, and optimized
+### Test 3: File Upload
 
-### Preview Production Build
+1. Go to http://localhost:5173
+2. Click "Choose File" or drag and drop a CSV
+3. File should show: columns, shape, and data preview
 
-```powershell
-npm run preview
-```
+If it fails, check:
+- Backend is running (`curl http://localhost:8000/health`)
+- Browser console (F12) for error messages
+- CORS settings in backend `.env`
 
-This starts a local server to test the production build before deployment.
-
-### Deployment Options
-
-```bash
-# Option 1: Deploy to GitHub Pages
-npm install --save-dev gh-pages
-# Then update build config for GitHub Pages
-
-# Option 2: Deploy to Netlify
-# Drop the 'dist' folder into Netlify
-
-# Option 3: Deploy with Docker
-docker build -t datapilot-frontend .
-docker run -p 80:80 datapilot-frontend
-
-# Option 4: Deploy to Azure Static Web Apps, Vercel, etc.
-# See their documentation for setup
-```
+---
 
 ## Troubleshooting
 
@@ -232,118 +242,188 @@ docker run -p 80:80 datapilot-frontend
 # Use a different port
 npm run dev -- --port 5174
 
-# Or kill the process using port 5173 (Windows):
+# Or find and kill the process
 netstat -ano | findstr :5173
 taskkill /PID <PID> /F
 ```
 
+### Issue: Dependencies Installation Fails
+
+**Problem**: `npm install` fails with permission or network errors
+
+**Solution**:
+```powershell
+# Clear npm cache
+npm cache clean --force
+
+# Remove old installation
+Remove-Item -Recurse node_modules
+Remove-Item package-lock.json
+
+# Reinstall
+npm install
+```
+
 ### Issue: `Cannot find module...` Error
 
-**Problem**: Dependencies aren't installed
+**Problem**: Missing dependencies or invalid node_modules
 
 **Solution**:
 ```powershell
 # Reinstall all dependencies
-rm -r node_modules
+Remove-Item -Recurse node_modules
 npm install
+
+# Start fresh
+npm run dev
 ```
 
 ### Issue: CORS Error - "Access-Control-Allow-Origin"
 
-**Problem**: Backend doesn't allow frontend origin
+**Problem**: Frontend can't upload files - browser shows CORS error
+
+**Symptoms**: Error in console like "Access to XMLHttpRequest blocked by CORS policy"
 
 **Solution**:
-1. Check backend is running: `curl http://localhost:8000/health`
-2. Add frontend URL to backend `.env`:
-   ```env
-   ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+1. Check backend is running:
+   ```powershell
+   curl http://localhost:8000/health
    ```
-3. Restart backend server
-4. Check vite proxy config includes `/api` path
+
+2. Edit backend `.env` and add frontend URL:
+   ```
+   ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8000
+   ```
+
+3. Restart backend:
+   ```powershell
+   # In backend terminal, press Ctrl+C then:
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+4. Refresh frontend browser (F5)
 
 ### Issue: API Calls Failing - "Cannot reach backend"
 
-**Problem**: Frontend can't connect to backend
+**Problem**: Frontend starts but can't connect to backend
+
+**Symptoms**: Upload button doesn't work, no data preview
 
 **Solution**:
-1. Verify backend is running on http://localhost:8000
-2. Check `.env` has correct `VITE_API_BASE_URL`:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000
+1. Verify backend is running:
+   ```powershell
+   curl http://localhost:8000/health
+   # Expected: {"status":"ok"}
    ```
-3. Test backend directly: `curl http://localhost:8000/health`
-4. Check browser console (F12) for detailed error messages
 
-### Issue: Slow Performance / Hot Reload Not Working
+2. Check `.env` has correct URL:
+   ```powershell
+   cat .env
+   # Should show: VITE_API_BASE_URL=http://localhost:8000
+   ```
 
-**Problem**: Vite cache or node_modules corruption
+3. Restart frontend (Ctrl+C in npm dev terminal, then `npm run dev`)
+
+4. Open browser console (F12 → Console) and check for errors
+
+5. Test backend health directly:
+   ```powershell
+   curl -v http://localhost:8000/health
+   ```
+
+### Issue: Slow Performance or Hot Reload Not Working
+
+**Problem**: Changes don't appear, or app is slow
 
 **Solution**:
 ```powershell
 # Clear Vite cache
-rm -r node_modules/.vite
+Remove-Item -Recurse -Force node_modules\.vite
 
 # Or complete reinstall
-rm -r node_modules dist .vite
+Remove-Item -Recurse node_modules, dist, .vite
 npm install
 npm run dev
 ```
 
-### Issue: Build Fails with Memory Error
+### Issue: Node/npm Version Wrong
 
-**Problem**: Not enough memory for build
+**Problem**: Error like "Node version too old" or npm errors
 
 **Solution**:
 ```powershell
-# Increase Node.js memory limit
-$env:NODE_OPTIONS = "--max-old-space-size=4096"
-npm run build
+node --version  # Should be v24.x.x
+npm --version   # Should be 10.x.x
+
+# If wrong versions, download from nodejs.org or use nvm
 ```
 
-## Docker Setup (Optional)
+### Issue: File Upload Shows No Preview
 
-### Create Dockerfile
+**Problem**: Upload completes but columns and preview don't show
 
-Create a `Dockerfile` in the frontend directory:
+**Solution**:
+1. Check browser console (F12 → Network tab)
+2. Look at `/api/v1/upload` response - should show columns
+3. Verify backend is processing the file
+4. Check backend logs for errors
+5. Ensure CSV file is valid (text format, comma-separated)
 
-```dockerfile
-# Build stage
-FROM node:24-slim as build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+---
 
-# Production stage
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+## Directory Structure
+
+```
+frontend/
+├── src/
+│   ├── main.jsx              # React entry point
+│   ├── App.jsx               # Main application component
+│   ├── App.css               # Application styles
+│   └── index.css             # Global styles
+├── public/                   # Static assets (images, etc.)
+├── dist/                     # Production build (created by npm run build)
+├── node_modules/             # Dependencies (created by npm install)
+├── package.json              # Project metadata and dependencies
+├── package-lock.json         # Locked dependency versions
+├── vite.config.js            # Vite configuration
+├── .env                      # Environment variables (you create this)
+└── README.md                 # This file
 ```
 
-### Build and Run
+### Key Files
 
-```powershell
-docker build -t datapilot-frontend .
-docker run -p 80:80 datapilot-frontend
-```
+| File | Purpose |
+|------|---------|
+| `src/App.jsx` | Main React component with upload, processing, and results views |
+| `src/App.css` | Styles for the application |
+| `vite.config.js` | Build configuration and dev server settings |
+| `.env` | API URL and other env variables (create manually) |
+| `package.json` | Dependencies: React, Vite, Axios |
 
-Access at: http://localhost
-
-## Environment Variables Reference
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API base URL |
+---
 
 ## Next Steps
 
-1. ✅ Frontend is running on http://localhost:5173
-2. Ensure Backend is running: [../backend/README.md](../backend/README.md)
-3. Start using: Upload a CSV file and select a target column
-4. Monitor progress in real-time
+✅ **Frontend is running** on http://localhost:5173
+
+1. **Ensure Backend is running** - Check [../backend/README.md](../backend/README.md)
+2. **Start using the platform**:
+   - Prepare a CSV file (headers + data rows)
+   - Upload it to DataPilot
+   - Select a target column to predict
+   - Watch the ML pipeline run in real-time
+3. **Production deployment** - Run `npm run build` to create optimized build for deployment
+4. **Need help?** - Check [Troubleshooting](#troubleshooting) section above
+
+---
+
+## Technology Stack
+
+- **React 18** - Component-based UI library
+- **Vite 5** - Fast build tool and dev server
+- **Axios** - HTTP client for API requests
+- **JavaScript** - Modern ES6+ syntax
+- **CSS** - Inline styles with dark theme
 
 ## Browser Support
 
@@ -352,296 +432,6 @@ Access at: http://localhost
 - Safari 14+
 - Edge 90+
 
-## Support
-
-For issues or questions:
-- Check the [Troubleshooting](#troubleshooting) section
-- Review [Vite Documentation](https://vitejs.dev/)
-- Check [React Documentation](https://react.dev/)
-
 ---
 
-**Frontend setup complete!** ✨
-
-## Features
-
-- **Modern UI/UX**: Clean, dark-themed interface with intuitive navigation
-- **Drag-and-Drop Upload**: Easy CSV file upload with drag-and-drop support
-- **Data Preview**: Real-time preview of uploaded datasets
-- **Column Selection**: Visual interface for selecting target columns
-- **Progress Tracking**: Real-time monitoring of the ML pipeline progress
-- **Visual Pipeline Steps**: Clear visualization of the 6-stage processing pipeline
-- **Live Logging**: Real-time logs showing the analysis process
-- **Results Visualization**: Comprehensive display of model performance metrics
-- **Model Comparison**: Side-by-side comparison of different trained models
-- **Feature Importance Charts**: Visual representation of feature importance rankings
-- **Responsive Design**: Works well on various screen sizes
-
-## Technology Stack
-
-- **React 19**: Component-based UI library with hooks for state management
-- **Vite**: Next-generation build tool for fast development and optimized builds
-- **Axios**: Promise-based HTTP client for API communication
-- **Recharts**: Declarative charting library for data visualization
-- **ESLint**: JavaScript linter for code quality and consistency
-- **JavaScript/JSX**: Language for building user interfaces
-
-## Architecture
-
-The frontend follows a component-based architecture with a single main App component that manages state and coordinates different views:
-
-```
-App.jsx
-├── State Management (useState, useEffect, useRef)
-├── Page Views
-│   ├── Upload Page
-│   ├── Processing Page
-│   └── Results Page
-├── API Integration (axios)
-└── Styling (inline styles)
-```
-
-### State Management
-The application uses React hooks for state management:
-- `useState` for managing component state
-- `useEffect` for side effects and lifecycle management
-- `useRef` for accessing DOM elements and storing mutable values
-
-### Navigation
-The application uses a simple state-driven navigation system:
-- Upload page for file upload and target selection
-- Processing page for monitoring analysis progress
-- Results page for viewing model performance and insights
-
-## Installation
-
-### Prerequisites
-- Node.js 16 or higher
-- npm or yarn package manager
-
-### Setup Process
-
-1. Navigate to the frontend directory:
-```bash
-cd DataPilot_AI/frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Verify installation by checking package versions:
-```bash
-npm list react react-dom vite
-```
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the frontend directory with the following variables:
-
-```
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-- `VITE_API_BASE_URL`: The base URL for the backend API (must start with VITE_ to be recognized by Vite)
-
-### Package Dependencies
-
-Key dependencies from `package.json`:
-- `react`: Core UI library
-- `react-dom`: DOM renderer for React
-- `axios`: HTTP client for API requests
-- `recharts`: Charting library (though not heavily used in current implementation)
-- `vite`: Build tool and development server
-
-## Development
-
-### Starting the Development Server
-
-Run the following command to start the development server:
-
-```bash
-npm run dev
-```
-
-This will start the application on `http://localhost:5173` with hot-reloading enabled.
-
-### Available Scripts
-
-- `npm run dev`: Starts the development server with hot-reload
-- `npm run build`: Builds the production-ready application
-- `npm run lint`: Runs ESLint to check code quality
-- `npm run preview`: Locally previews the production build
-
-### Development Workflow
-
-1. Make changes to JSX/JS files
-2. Changes will automatically reflect in the browser (hot-reload)
-3. Use browser developer tools to debug React components
-4. Test API interactions with the backend server running
-
-## Project Structure
-
-```
-frontend/
-├── src/
-│   ├── App.jsx                 # Main application component
-│   ├── App.css                 # Global CSS styles
-│   ├── index.css               # CSS reset/base styles
-│   └── main.jsx                # Entry point that renders App
-├── public/                     # Static assets
-├── package.json               # Project metadata and dependencies
-├── package-lock.json          # Locked dependency versions
-├── vite.config.js             # Vite build configuration
-├── eslint.config.js           # ESLint configuration
-├── .env                       # Environment variables
-└── README.md                  # This file
-```
-
-## Components
-
-### Main App Component ([App.jsx](file:///d:/Jame/DataPilot_AI/frontend/src/App.jsx))
-
-The main component handles:
-
-#### State Management
-- `page`: Current view (upload, processing, results)
-- `session`: Current session ID
-- `columns`: List of dataset columns
-- `filename`: Name of uploaded file
-- `shape`: Dimensions of the dataset
-- `preview`: Sample rows from the dataset
-- `target`: Selected target column
-- `progress`: Current analysis progress percentage
-- `currentStep`: Current stage in the pipeline
-- `logs`: Live logs from the analysis
-- `status`: Current analysis status
-- `results`: Final analysis results
-- `dragging`: Flag for drag-and-drop state
-- `pollRef`: Reference for polling interval
-- `logRef`: Reference for scrolling logs
-
-#### Key Functions
-- `handleFile()`: Processes uploaded CSV files
-- `startAnalysis()`: Initiates the ML pipeline
-- `Polling Logic`: Continuously fetches status updates
-
-#### Views
-- **Upload View**: File upload and target selection interface
-- **Processing View**: Progress tracking and live logs
-- **Results View**: Model performance metrics and visualizations
-
-## API Integration
-
-### API Base URL
-The application reads the backend API URL from the `VITE_API_BASE_URL` environment variable, defaulting to `http://localhost:8000`.
-
-### API Calls
-The frontend makes the following API requests:
-
-1. **Upload**: `POST /api/v1/upload`
-   - Uploads CSV files to the backend
-   - Returns session info and data preview
-
-2. **Analyze**: `POST /api/v1/analyze`
-   - Starts the ML pipeline with specified target column
-   - Returns confirmation of analysis start
-
-3. **Status**: `GET /api/v1/status/{session_id}`
-   - Polls for current analysis progress
-   - Returns status, progress, and logs
-
-4. **Results**: `GET /api/v1/results/{session_id}`
-   - Retrieves final analysis results
-   - Returns model performance and metrics
-
-### Error Handling
-- Network errors are caught and displayed as alerts
-- Validation errors from the backend are shown to the user
-- File format restrictions are enforced client-side
-
-## Styling
-
-The application uses inline styles with a consistent dark theme defined in the `s` object:
-
-### Color Palette
-- `bg`: `#0a0c0f` - Main background
-- `surface`: `#111418` - Card backgrounds
-- `surface2`: `#181c22` - Secondary surfaces
-- `border`: `#1e2430` - Border color
-- `accent`: `#00d4aa` - Primary accent (teal-green)
-- `accent2`: `#0099ff` - Secondary accent (blue)
-- `text`: `#e2e8f0` - Main text
-- `text2`: `#94a3b8` - Secondary text
-- `text3`: `#4a5568` - Tertiary text
-- `success`: `#10b981` - Success indicators
-- `warn`: `#f59e0b` - Warning indicators
-
-### Typography
-- `sans`: System font stack with DM Sans as primary
-- `mono`: Space Mono for monospace text
-- Consistent sizing and spacing throughout
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000` |
-
-## Deployment
-
-### Building for Production
-
-To create a production build:
-
-```bash
-npm run build
-```
-
-This creates a `dist/` folder with optimized, minified assets ready for deployment.
-
-### Deployment Options
-
-1. **Static Host**: Deploy the `dist/` folder contents to any static hosting service (Netlify, Vercel, GitHub Pages, etc.)
-2. **Node Server**: Serve the built files using a Node.js server
-3. **CDN**: Upload to a CDN for global distribution
-
-### Optimization Features
-
-- Bundle splitting and code splitting
-- Asset optimization and compression
-- Tree-shaking of unused code
-- Modern JavaScript syntax compilation
-
-## Troubleshooting
-
-### Common Issues
-
-#### API Connection Problems
-- Verify backend server is running on the configured port
-- Check that CORS settings allow requests from frontend origin
-- Confirm `VITE_API_BASE_URL` is correctly set
-
-#### Build Errors
-- Ensure all dependencies are installed (`npm install`)
-- Check for syntax errors in JSX files
-- Verify environment variables are properly configured
-
-#### Performance Issues
-- Large datasets may cause UI lag during preview
-- Consider implementing pagination for large data previews
-- Optimize re-rendering with React.memo if needed
-
-### Development Tips
-
-- Use React Developer Tools browser extension for debugging
-- Monitor network requests in browser dev tools
-- Check console for warnings and errors
-- Use conditional rendering to optimize performance
-
----
-
-Made with ❤️ using React and Vite.
+Built with ❤️ for the data science community.
